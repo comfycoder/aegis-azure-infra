@@ -1,0 +1,74 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "planName": {
+            "type": "string"
+        },
+        "planEnvironment": {
+            "type": "string"
+        },
+        "planSku": {
+            "type": "string"
+        },
+        "planSkuCode": {
+            "type": "string"
+        },
+        "workerSize": {
+            "type": "string"
+        },
+        "workerSizeId": {
+            "type": "string"
+        },
+        "numberOfWorkers": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "createdDate": {
+            "type": "string"
+        },
+        "TemplateVersion": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "tenantId": "[subscription().tenantId]",
+        "subscriptionId": "[subscription().subscriptionId]",
+        "planName": "[if(startsWith(parameters('planName'),'ASP-'), parameters('planName'), concat('AIS-', parameters('planName')))]",
+        "location": "[toLower(replace(if(empty(parameters('location')), resourceGroup().location, parameters('location')), ' ', ''))]",
+        "resourceGroupTags": "[if(contains(resourceGroup(), 'tags'), resourceGroup().tags, json('{}'))]",
+        "versionTag": {
+          "TemplateVersion": "[parameters('TemplateVersion')]"
+        },      
+        "createdDateTag": {
+          "createdOn": "[parameters('createdDate')]"
+        }, 
+        "purposeTag": {
+          "Purpose": "Aegis-AppServicePlan"
+        },       
+        "aggregatedTags": "[union(variables('resourceGroupTags'), variables('versionTag'), variables('createdDateTag'), variables('purposeTag'))]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-02-01",
+            "name": "[variables('planName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[variables('location')]",
+            "kind": "",
+            "tags": "[variables('aggregatedTags')]",
+            "properties": {
+                "name": "[parameters('planName')]",
+                "workerSize": "[parameters('workerSize')]",
+                "workerSizeId": "[parameters('workerSizeId')]",
+                "numberOfWorkers": "[parameters('numberOfWorkers')]",
+                "hostingEnvironment": "[parameters('planEnvironment')]"
+            },
+            "sku": {
+                "Tier": "[parameters('planSku')]",
+                "Name": "[parameters('planSkuCode')]"
+            }
+        }
+    ]
+}

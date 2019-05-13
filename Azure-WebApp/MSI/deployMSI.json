@@ -1,0 +1,43 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "msiName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "createdDate": {
+            "type": "string"
+        },
+        "TemplateVersion": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "msiName": "[if(startsWith(parameters('msiName'),'MSI-'), parameters('msiName'), concat('MSI-', parameters('msiName')))]",
+        "location": "[toLower(replace(if(empty(parameters('location')), resourceGroup().location, parameters('location')), ' ', ''))]",
+        "resourceGroupTags": "[if(contains(resourceGroup(), 'tags'), resourceGroup().tags, json('{}'))]",
+        "versionTag": {
+          "TemplateVersion": "[parameters('TemplateVersion')]"
+        },      
+        "createdDateTag": {
+          "createdOn": "[parameters('createdDate')]"
+        }, 
+        "purposeTag": {
+          "Purpose": "Aegis-MSI"
+        },       
+        "aggregatedTags": "[union(variables('resourceGroupTags'), variables('versionTag'), variables('createdDateTag'), variables('purposeTag'))]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-11-30",
+            "name": "[variables('msiName')]",
+            "location": "[variables('location')]",
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "tags": "[variables('aggregatedTags')]",
+            "properties": {}
+        }
+    ]
+}

@@ -1,0 +1,118 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "appInsightsName": {
+            "type": "string"
+        },
+        "planName": {
+            "type": "string"
+        },
+        "planRGName": {
+            "type": "string"
+        },
+        "planEnvironment": {
+            "type": "string"
+        },
+        "alwaysOn": {
+            "type": "bool"
+        },
+        "currentStack": {
+            "type": "string"
+        },
+        "createdDate": {
+            "type": "string"
+        },
+        "TemplateVersion": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "tenantId": "[subscription().tenantId]",
+        "subscriptionId": "[subscription().subscriptionId]",
+        "appName": "[if(startsWith(parameters('appName'),'AS-'), parameters('appName'), concat('AS-', parameters('appName')))]",
+        "location": "[toLower(replace(if(empty(parameters('location')), resourceGroup().location, parameters('location')), ' ', ''))]",
+        "serverFarmId": "[concat('/subscriptions/', variables('subscriptionId'),'/resourcegroups/', parameters('planRGName'), '/providers/Microsoft.Web/serverfarms/', parameters('planName'))]",
+        "resourceGroupTags": "[if(contains(resourceGroup(), 'tags'), resourceGroup().tags, json('{}'))]",
+        "versionTag": {
+          "TemplateVersion": "[parameters('TemplateVersion')]"
+        },      
+        "createdDateTag": {
+          "createdOn": "[parameters('createdDate')]"
+        }, 
+        "purposeTag": {
+          "Purpose": "Aegis-WebApp-dotnet"
+        },       
+        "aggregatedTags": "[union(variables('resourceGroupTags'), variables('versionTag'), variables('createdDateTag'), variables('purposeTag'))]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-02-01",
+            "name": "[variables('appName')]",
+            "type": "Microsoft.Web/sites",
+            "location": "[variables('location')]",
+            "tags": "[variables('aggregatedTags')]",
+            "dependsOn": [
+            ],
+            "properties": {
+                "name": "[parameters('appName')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(concat('microsoft.insights/components/', parameters('appInsightsName')), '2015-05-01').InstrumentationKey]"
+                        },
+                        {
+                            "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                            "value": "~2"
+                        },
+                        {
+                            "name": "XDT_MicrosoftApplicationInsights_Mode",
+                            "value": "default"
+                        },
+                        {
+                            "name": "DiagnosticServices_EXTENSION_VERSION",
+                            "value": "disabled"
+                        },
+                        {
+                            "name": "APPINSIGHTS_PROFILERFEATURE_VERSION",
+                            "value": "disabled"
+                        },
+                        {
+                            "name": "APPINSIGHTS_SNAPSHOTFEATURE_VERSION",
+                            "value": "disabled"
+                        },
+                        {
+                            "name": "InstrumentationEngine_EXTENSION_VERSION",
+                            "value": "disabled"
+                        },
+                        {
+                            "name": "SnapshotDebugger_EXTENSION_VERSION",
+                            "value": "disabled"
+                        },
+                        {
+                            "name": "XDT_MicrosoftApplicationInsights_BaseExtensions",
+                            "value": "disabled"
+                        }
+                    ],
+                    "metadata": [
+                        {
+                            "name": "CURRENT_STACK",
+                            "value": "[parameters('currentStack')]"
+                        }
+                    ],
+                    "alwaysOn": "[parameters('alwaysOn')]"
+                },
+                "serverFarmId": "[variables('serverFarmId')]",
+                "planEnvironment": "[parameters('planEnvironment')]",
+                "clientAffinityEnabled": true
+            }
+        }
+    ]
+}

@@ -1,0 +1,1 @@
+PowerShell.exe -Executionpolicy remotesigned -File .\mainWebAppDeploy.ps1

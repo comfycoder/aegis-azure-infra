@@ -1,0 +1,86 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appInsightsName": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 40,
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of the App Insights resource."
+            }
+        },
+        "appName": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 40,
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of the Web Application resource to monitor."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "eastus2",
+            "metadata": {
+              "description": "Location for the App Insights resource."
+            }
+        },
+        "createdDate": {
+            "type": "string"
+        },
+        "TemplateVersion": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "tenantId": "[subscription().tenantId]",
+        "subscriptionId": "[subscription().subscriptionId]",
+        "appInsightsName": "[if(startsWith(parameters('appInsightsName'),'AIS-'), parameters('appInsightsName'), concat('AIS-', parameters('appInsightsName')))]",
+        "location": "[toLower(replace(if(empty(parameters('location')), resourceGroup().location, parameters('location')), ' ', ''))]",
+        "resourceGroupTags": "[if(contains(resourceGroup(), 'tags'), resourceGroup().tags, json('{}'))]",
+        "versionTag": {
+          "TemplateVersion": "[parameters('TemplateVersion')]"
+        },      
+        "createdDateTag": {
+          "createdOn": "[parameters('createdDate')]"
+        }, 
+        "purposeTag": {
+          "Purpose": "Aegis-AppInsights"
+        },       
+        "aggregatedTags": "[union(variables('resourceGroupTags'), variables('versionTag'), variables('createdDateTag'), variables('purposeTag'))]"
+    },
+    "resources": [
+        {
+            "name": "[variables('appInsightsName')]",
+            "type": "Microsoft.Insights/components",
+            "location": "[variables('location')]",
+            "apiVersion": "2015-05-01",
+            "dependsOn": [],
+            "tags": "[variables('aggregatedTags')]",
+            "properties": {
+                "ApplicationId": "[parameters('appName')]",
+                "Request_Source": "IbizaWebAppExtensionCreate"
+            }
+        }
+    ],
+    "outputs": {
+        "appInsightsName": {
+            "type": "string",
+            "value": "[variables('appInsightsName')]"
+        },
+        "appName": {
+            "type": "string",
+            "value": "[parameters('appName')]"
+        },
+        "location": {
+            "type": "string",
+            "value": "[variables('location')]"
+        },
+        "appInsightsKey": {
+            "type": "string",
+            "value": "[reference(parameters('appInsightsName'), '2014-04-01').InstrumentationKey]"
+        }
+    }
+}

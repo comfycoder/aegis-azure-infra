@@ -1,0 +1,68 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "kvName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "tenantId": {
+            "type": "string"
+        },
+        "enabledForDeployment": {
+            "type": "bool",
+            "defaultValue": true
+        },
+        "enabledForTemplateDeployment": {
+            "type": "bool",
+            "defaultValue": true
+        },
+        "enabledForDiskEncryption": {
+            "type": "bool",
+            "defaultValue": true
+        },
+        "createdDate": {
+            "type": "string"
+        },
+        "TemplateVersion": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "kvName": "[if(startsWith(parameters('kvName'),'kv-'), parameters('kvName'), concat('kv-', parameters('kvName')))]",
+        "location": "[toLower(replace(if(empty(parameters('location')), resourceGroup().location, parameters('location')), ' ', ''))]",
+        "resourceGroupTags": "[if(contains(resourceGroup(), 'tags'), resourceGroup().tags, json('{}'))]",
+        "versionTag": {
+          "TemplateVersion": "[parameters('TemplateVersion')]"
+        },      
+        "createdDateTag": {
+          "createdOn": "[parameters('createdDate')]"
+        }, 
+        "purposeTag": {
+          "Purpose": "Aegis-KeyVault"
+        },       
+        "aggregatedTags": "[union(variables('resourceGroupTags'), variables('versionTag'), variables('createdDateTag'), variables('purposeTag'))]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2016-10-01",
+            "name": "[variables('kvName')]",
+            "location": "[variables('location')]",
+            "type": "Microsoft.KeyVault/vaults",
+            "tags": "[variables('aggregatedTags')]",
+            "properties": {
+                "enabledForDeployment": "[parameters('enabledForDeployment')]",
+                "enabledForTemplateDeployment": "[parameters('enabledForTemplateDeployment')]",
+                "enabledForDiskEncryption": "[parameters('enabledForDiskEncryption')]",
+                "accessPolicies": [],
+                "tenantId": "[parameters('tenantId')]",
+                "sku": {
+                    "name": "premium",
+                    "family": "A"
+                }
+            }
+        }
+    ]
+}
